@@ -32,6 +32,21 @@ async function main() {
       for (const service of services) {
         const domain = `${service.name}.${service.domain || 'local'}`;
         
+        // DEBUG: Log domain details for diagnosis
+        console.log(`[DEBUG] Processing domain: "${domain}", name: "${service.name}", ip: "${service.ip}"`);
+        
+        // Check for internal/local domains that should be skipped
+        const isLocalDomain = (service.domain || 'local') === 'local';
+        const hasSwarmPrefix = service.name.includes('@');
+        
+        console.log(`[DEBUG] isLocalDomain: ${isLocalDomain}, hasSwarmPrefix: ${hasSwarmPrefix}`);
+        
+        // Skip internal Docker/Traefik routes (.local domains and @ prefixed names)
+        if (isLocalDomain || hasSwarmPrefix) {
+          console.log(`[INFO] Skipping internal/local domain: ${domain}`);
+          continue;
+        }
+        
         console.log(`[INFO] Syncing: ${domain} -> ${service.ip || 'xxx.xxx.xxx.xxx'}`);
         await piholeService.addDnsRecord(domain, service.ip || 'xxx.xxx.xxx.xxx');
       }
