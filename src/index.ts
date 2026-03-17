@@ -4,6 +4,13 @@ import { PiHoleService } from './services/pihole';
 
 dotenv.config();
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 async function main() {
   console.log('[INFO] Starting Traefik to Pi-hole DNS Sync...');
 
@@ -31,7 +38,7 @@ async function main() {
 
       console.log('[INFO] Sync completed successfully');
     } catch (error) {
-      console.error('[ERROR] Sync failed:', error);
+      console.error('[ERROR] Sync failed:', getErrorMessage(error));
     }
   }
 
