@@ -6,24 +6,30 @@
  * - Provide helper functions for common operations
  */
 
-import { GenericContainer, DockerComposeEnvironment } from 'testcontainers';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+// Set required environment variables BEFORE importing any modules that use logger/config
+process.env.REVERSE_PROXY_IPS = process.env.REVERSE_PROXY_IPS || 'xxx.xxx.xxx.xxx';
+process.env.PIHOLE_PASSWORD = process.env.PIHOLE_PASSWORD || 'testpassword';
+process.env.TRAEFIK_API_URL = process.env.TRAEFIK_API_URL || 'http://traefik:8080';
+process.env.PIHOLE_URL = process.env.PIHOLE_URL || 'http://pihole:80';
+process.env.SYNC_INTERVAL = process.env.SYNC_INTERVAL || '60000';
+process.env.DEFAULT_DOMAIN = process.env.DEFAULT_DOMAIN || 'local';
+process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-const execAsync = promisify(exec);
-
-let dockerCompose: DockerComposeEnvironment | null = null;
+let dockerCompose: any = null;
 
 /**
  * Starts the Docker Compose services for integration testing
  * Uses the existing docker-compose.yml file
  */
-export async function startDockerCompose(): Promise<DockerComposeEnvironment> {
+export async function startDockerCompose(): Promise<any> {
   if (dockerCompose) {
     return dockerCompose;
   }
 
   console.log('Starting Docker Compose for integration tests...');
+  
+  // Dynamic import to avoid issues with testcontainers types
+  const { DockerComposeEnvironment } = await import('testcontainers');
   
   dockerCompose = await new DockerComposeEnvironment(
     process.cwd(),
@@ -44,14 +50,6 @@ export async function stopDockerCompose(): Promise<void> {
     dockerCompose = null;
     console.log('Docker Compose stopped');
   }
-}
-
-/**
- * Gets the mapped port for a service
- */
-export function getServicePort(container: GenericContainer, port: number): number | undefined {
-  const ports = container.getMappedPort(port);
-  return ports ? ports.get() : undefined;
 }
 
 /**
@@ -85,6 +83,9 @@ export async function waitForService(
 export async function setupIntegrationTests(): Promise<void> {
   // Check if Docker is available
   try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
     await execAsync('docker --version');
   } catch (error) {
     console.warn('Docker not available, skipping integration tests');
