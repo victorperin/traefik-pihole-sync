@@ -14,8 +14,7 @@ export default async function globalSetup() {
   const dockerAvailable = await setupIntegrationTests();
   
   if (!dockerAvailable) {
-    console.warn('Docker not available - integration tests will be skipped');
-    return;
+    throw new Error('Docker is required for integration tests but is not available');
   }
 
   // Wait for both services to be ready with retries
@@ -24,11 +23,14 @@ export default async function globalSetup() {
   const traefikReady = await waitForService(`${TRAEFIK_API_URL}/api/http/routers`, 60, 2000);
   const piholeReady = await waitForService(`${PIHOLE_URL}/api/status`, 60, 2000);
   
-  if (!traefikReady || !piholeReady) {
-    console.error('Failed to start services. Integration tests will fail.');
-  } else {
-    console.log('All services are ready!');
+  if (!traefikReady) {
+    throw new Error('Traefik service failed to start');
   }
   
+  if (!piholeReady) {
+    throw new Error('Pi-hole service failed to start');
+  }
+  
+  console.log('All services are ready!');
   console.log('\n=== Global Setup Complete ===\n');
 }

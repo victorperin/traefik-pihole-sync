@@ -13,10 +13,7 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:debug": "docker-compose up --build",
-    "test": "jest --config jest.config.js",
-    "test:unit": "jest --config jest.config.js",
-    "test:integration": "jest --config jest.integration.config.js",
-    "test:all": "jest --config jest.config.js && jest --config jest.integration.config.js",
+    "test": "jest",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

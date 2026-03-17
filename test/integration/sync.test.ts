@@ -7,62 +7,31 @@
 
 import { TraefikService } from '../../src/services/traefik';
 import { PiHoleService, DnsRecord, generateDiff } from '../../src/services/pihole';
-import { isDockerAvailable, isDockerInitialized, TEST_PORTS } from './setup';
+import { TEST_PORTS } from './setup';
 
 describe('Full Sync Flow Integration', () => {
-  let traefikService: TraefikService | null = null;
-  let piholeService: PiHoleService | null = null;
-  let traefikUrl: string;
-  let piholeUrl: string;
+  const traefikUrl = process.env.TRAEFIK_API_URL || `http://localhost:${TEST_PORTS.traefik}`;
+  const piholeUrl = process.env.PIHOLE_URL || `http://localhost:${TEST_PORTS.pihole}`;
   const password = 'testpassword';
   const reverseProxyIps = ['xxx.xxx.xxx.xxx'];
 
-  beforeAll(() => {
-    // Skip all tests if Docker is not available
-    if (!isDockerAvailable() || !isDockerInitialized()) {
-      return;
-    }
+  const traefikService = new TraefikService(traefikUrl);
+  const piholeService = new PiHoleService(piholeUrl, password);
 
-    traefikUrl = process.env.TRAEFIK_API_URL || `http://localhost:${TEST_PORTS.traefik}`;
-    piholeUrl = process.env.PIHOLE_URL || `http://localhost:${TEST_PORTS.pihole}`;
-
-    traefikService = new TraefikService(traefikUrl);
-    piholeService = new PiHoleService(piholeUrl, password);
-  });
-
+  // Clean up test records before each test
   beforeEach(async () => {
-    if (!isDockerAvailable() || !isDockerInitialized() || !piholeService) {
-      return;
-    }
-
-    // Clean up test records
-    try {
-      const records = await piholeService.getAllDnsRecords();
-      for (const record of records) {
-        if (record.domain.includes('test') || record.domain.includes('example')) {
-          await piholeService.removeDnsRecord(record.domain, record.ip);
-        }
+    const records = await piholeService.getAllDnsRecords();
+    for (const record of records) {
+      if (record.domain.includes('test') || record.domain.includes('example')) {
+        await piholeService.removeDnsRecord(record.domain, record.ip);
       }
-    } catch (error) {
-      // Ignore cleanup errors
     }
   });
-
-  const skipIfNoDocker = () => {
-    if (!isDockerAvailable() || !isDockerInitialized() || !traefikService || !piholeService) {
-      return true;
-    }
-    return false;
-  };
 
   describe('Sync Flow', () => {
     it('should complete full sync cycle: fetch routers -> generate diff -> apply changes', async () => {
-      if (skipIfNoDocker()) {
-        return;
-      }
-
       // Step 1: Fetch routers from Traefik
-      const routers = await traefikService!.getRouters();
+      const routers = await traefikService.getRouters();
       expect(routers).toBeDefined();
 
       // Step 2: Build desired records
@@ -83,35 +52,31 @@ describe('Full Sync Flow Integration', () => {
       }
 
       // Step 3: Get current records from Pi-hole
-      const currentRecords = await piholeService!.getAllDnsRecords();
+      const currentRecords = await piholeService.getAllDnsRecords();
 
       // Step 4: Generate diff
       const diff = generateDiff(currentRecords, desiredRecords);
 
       // Step 5: Apply changes (add new records)
       for (const record of diff.toAdd) {
-        await piholeService!.addDnsRecord(record.domain, record.ip);
+        await piholeService.addDnsRecord(record.domain, record.ip);
       }
 
       // Step 6: Verify records were added
-      const updatedRecords = await piholeService!.getAllDnsRecords();
+      const updatedRecords = await piholeService.getAllDnsRecords();
       
       // Check that we have some records from the sync
       expect(updatedRecords.length).toBeGreaterThanOrEqual(0);
     });
 
     it('should add new records when none exist', async () => {
-      if (skipIfNoDocker()) {
-        return;
-      }
-
       // Get current records
-      const currentRecords = await piholeService!.getAllDnsRecords();
+      const currentRecords = await piholeService.getAllDnsRecords();
       
       // Clean all test records
       for (const record of currentRecords) {
         if (record.domain.includes('test')) {
-          await piholeService!.removeDnsRecord(record.domain, record.ip);
+          await piholeService.removeDnsRecord(record.domain, record.ip);
         }
       }
 
@@ -121,18 +86,18 @@ describe('Full Sync Flow Integration', () => {
       ];
 
       // Get clean current records
-      const cleanCurrent = await piholeService!.getAllDnsRecords();
+      const cleanCurrent = await piholeService.getAllDnsRecords();
       
       // Generate diff
       const diff = generateDiff(cleanCurrent, desiredRecords);
 
       // Apply additions
       for (const record of diff.toAdd) {
-        await piholeService!.addDnsRecord(record.domain, record.ip);
+        await piholeService.addDnsRecord(record.domain, record.ip);
       }
 
       // Verify
-      const finalRecords = await piholeService!.getAllDnsRecords();
+      const finalRecords = await piholeService.getAllDnsRecords();
       const found = finalRecords.find(
         r => r.domain === 'sync.test.example.com' && r.ip === 'xxx.xxx.xxx.xxx'
       );
@@ -141,15 +106,11 @@ describe('Full Sync Flow Integration', () => {
     });
 
     it('should remove records not in desired list', async () => {
-      if (skipIfNoDocker()) {
-        return;
-      }
-
       // Add a record that should be removed
-      await piholeService!.addDnsRecord('to.remove.test.com', 'xxx.xxx.xxx.xxx');
+      await piholeService.addDnsRecord('to.remove.test.com', 'xxx.xxx.xxx.xxx');
 
       // Verify it exists
-      let records = await piholeService!.getAllDnsRecords();
+      let records = await piholeService.getAllDnsRecords();
       let found = records.find(r => r.domain === 'to.remove.test.com');
       expect(found).toBeDefined();
 
@@ -158,25 +119,21 @@ describe('Full Sync Flow Integration', () => {
 
       // Apply removals
       for (const record of diff.toRemove) {
-        await piholeService!.removeDnsRecord(record.domain, record.ip);
+        await piholeService.removeDnsRecord(record.domain, record.ip);
       }
 
       // Verify it's gone
-      records = await piholeService!.getAllDnsRecords();
+      records = await piholeService.getAllDnsRecords();
       found = records.find(r => r.domain === 'to.remove.test.com');
       expect(found).toBeUndefined();
     });
 
     it('should handle change operations (update IP for existing domain)', async () => {
-      if (skipIfNoDocker()) {
-        return;
-      }
-
       // Add a record
-      await piholeService!.addDnsRecord('change.test.com', 'xxx.xxx.xxx.xxx');
+      await piholeService.addDnsRecord('change.test.com', 'xxx.xxx.xxx.xxx');
 
       // Current state
-      let records = await piholeService!.getAllDnsRecords();
+      let records = await piholeService.getAllDnsRecords();
       const currentRecord = records.find(r => r.domain === 'change.test.com');
       expect(currentRecord).toBeDefined();
 
@@ -196,13 +153,13 @@ describe('Full Sync Flow Integration', () => {
         // Find old IP and remove
         const oldRecord = records.find(r => r.domain === record.domain);
         if (oldRecord) {
-          await piholeService!.removeDnsRecord(record.domain, oldRecord.ip);
+          await piholeService.removeDnsRecord(record.domain, oldRecord.ip);
         }
-        await piholeService!.addDnsRecord(record.domain, record.ip);
+        await piholeService.addDnsRecord(record.domain, record.ip);
       }
 
       // Verify
-      records = await piholeService!.getAllDnsRecords();
+      records = await piholeService.getAllDnsRecords();
       const updatedRecord = records.find(r => r.domain === 'change.test.com');
       expect(updatedRecord?.ip).toBe('xxx.xxx.xxx.xxx');
     });
