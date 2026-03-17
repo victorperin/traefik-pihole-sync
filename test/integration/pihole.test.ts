@@ -10,21 +10,24 @@ import { PiHoleService, DnsRecord } from '../../src/services/pihole';
 import { startDockerCompose, stopDockerCompose, waitForService } from './setup';
 
 describe('PiHoleService Integration', () => {
-  let piholeService: PiHoleService;
+  let piholeService: PiHoleService | null = null;
   let piholeUrl: string;
   const password = 'testpassword';
+  let dockerAvailable = false;
 
   beforeAll(async () => {
     // Check if Docker is available
     try {
       await startDockerCompose();
+      dockerAvailable = true;
     } catch (error) {
       console.warn('Docker not available, skipping integration tests');
       return;
     }
 
+    if (!dockerAvailable) return;
+
     // Get Pi-hole URL from docker-compose (mapped port)
-    // For testing, we use localhost with the mapped port
     piholeUrl = process.env.PIHOLE_URL || 'http://localhost:1080';
     
     // Wait for Pi-hole to be ready
@@ -37,11 +40,16 @@ describe('PiHoleService Integration', () => {
   }, 120000);
 
   afterAll(async () => {
-    await stopDockerCompose();
+    if (dockerAvailable) {
+      await stopDockerCompose();
+    }
   });
 
+  // Skip all tests if Docker is not available
   beforeEach(async () => {
-    if (!piholeService) return;
+    if (!dockerAvailable || !piholeService) {
+      return;
+    }
 
     // Clean up any existing test records
     const records = await piholeService.getAllDnsRecords();
@@ -52,16 +60,22 @@ describe('PiHoleService Integration', () => {
     }
   });
 
+  const skipIfNoDocker = () => {
+    if (!dockerAvailable || !piholeService) {
+      return true;
+    }
+    return false;
+  };
+
   describe('addDnsRecord', () => {
     it('should add a DNS record to Pi-hole', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      await piholeService.addDnsRecord('test.example.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.addDnsRecord('test.example.com', 'xxx.xxx.xxx.xxx');
 
-      const records = await piholeService.getAllDnsRecords();
+      const records = await piholeService!.getAllDnsRecords();
       const found = records.find(
         r => r.domain === 'test.example.com' && r.ip === 'xxx.xxx.xxx.xxx'
       );
@@ -70,15 +84,14 @@ describe('PiHoleService Integration', () => {
     });
 
     it('should add multiple DNS records', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      await piholeService.addDnsRecord('test1.example.com', 'xxx.xxx.xxx.xxx');
-      await piholeService.addDnsRecord('test2.example.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.addDnsRecord('test1.example.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.addDnsRecord('test2.example.com', 'xxx.xxx.xxx.xxx');
 
-      const records = await piholeService.getAllDnsRecords();
+      const records = await piholeService!.getAllDnsRecords();
       
       expect(records.length).toBeGreaterThanOrEqual(2);
     });
@@ -86,24 +99,23 @@ describe('PiHoleService Integration', () => {
 
   describe('removeDnsRecord', () => {
     it('should remove a DNS record from Pi-hole', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
       // First add a record
-      await piholeService.addDnsRecord('remove.test.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.addDnsRecord('remove.test.com', 'xxx.xxx.xxx.xxx');
 
       // Verify it exists
-      let records = await piholeService.getAllDnsRecords();
+      let records = await piholeService!.getAllDnsRecords();
       let found = records.find(r => r.domain === 'remove.test.com');
       expect(found).toBeDefined();
 
       // Remove it
-      await piholeService.removeDnsRecord('remove.test.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.removeDnsRecord('remove.test.com', 'xxx.xxx.xxx.xxx');
 
       // Verify it's gone
-      records = await piholeService.getAllDnsRecords();
+      records = await piholeService!.getAllDnsRecords();
       found = records.find(r => r.domain === 'remove.test.com');
       expect(found).toBeUndefined();
     });
@@ -111,12 +123,11 @@ describe('PiHoleService Integration', () => {
 
   describe('getAllDnsRecords', () => {
     it('should return all DNS records from Pi-hole', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      const records = await piholeService.getAllDnsRecords();
+      const records = await piholeService!.getAllDnsRecords();
 
       expect(Array.isArray(records)).toBe(true);
       // Records should have domain and ip properties
@@ -127,20 +138,19 @@ describe('PiHoleService Integration', () => {
     });
 
     it('should return empty array when no records exist', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
       // Clean all test records first
-      const records = await piholeService.getAllDnsRecords();
+      const records = await piholeService!.getAllDnsRecords();
       for (const record of records) {
         if (record.domain.includes('test')) {
-          await piholeService.removeDnsRecord(record.domain, record.ip);
+          await piholeService!.removeDnsRecord(record.domain, record.ip);
         }
       }
 
-      const result = await piholeService.getAllDnsRecords();
+      const result = await piholeService!.getAllDnsRecords();
       // Should have empty or non-test records
       const testRecords = result.filter(r => r.domain.includes('test'));
       expect(testRecords).toHaveLength(0);
@@ -149,14 +159,13 @@ describe('PiHoleService Integration', () => {
 
   describe('listDnsRecords', () => {
     it('should return raw DNS records from API', async () => {
-      if (!piholeService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      await piholeService.addDnsRecord('raw.test.com', 'xxx.xxx.xxx.xxx');
+      await piholeService!.addDnsRecord('raw.test.com', 'xxx.xxx.xxx.xxx');
 
-      const rawRecords = await piholeService.listDnsRecords();
+      const rawRecords = await piholeService!.listDnsRecords();
 
       expect(Array.isArray(rawRecords)).toBe(true);
       expect(rawRecords.some(r => r.includes('raw.test.com'))).toBe(true);
