@@ -1,13 +1,6 @@
 import axios from 'axios';
 import { logger } from '../logger';
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
-}
-
 export interface TraefikRouterInfo {
   name: string;
   hosts: string[];
@@ -50,7 +43,7 @@ export class TraefikService {
       // Response is an object with router names as keys
       if (response.data && typeof response.data === 'object') {
         for (const [routerName, routerConfig] of Object.entries(response.data)) {
-          const config = routerConfig as any;
+          const config = routerConfig as { rule?: string };
           
           // Skip routers without rules
           if (!config.rule) {
