@@ -16,9 +16,11 @@ export interface TraefikServiceInfo {
 
 export class TraefikService {
   private baseUrl: string;
+  private defaultDomain: string;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, defaultDomain: string = 'local') {
     this.baseUrl = baseUrl;
+    this.defaultDomain = defaultDomain;
   }
 
   async getServices(): Promise<TraefikServiceInfo[]> {
@@ -37,7 +39,7 @@ export class TraefikService {
               name: service.name,
               // Extract IP from service load balancer servers if available
               ip: this.extractIp(service),
-              domain: 'local',
+              domain: this.defaultDomain,
             });
           }
         }
