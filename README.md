@@ -5,10 +5,11 @@ A Node.js application that synchronizes DNS records from Traefik to Pi-hole. Whe
 ## Features
 
 - Automatic DNS synchronization from Traefik to Pi-hole
+- Fetches Host rules from Traefik routers (not services)
+- Supports multiple reverse proxy IPs
 - Configurable sync interval
 - Docker-native deployment
 - TypeScript support
-- Health monitoring
 
 ## Prerequisites
 
@@ -38,7 +39,27 @@ A Node.js application that synchronizes DNS records from Traefik to Pi-hole. Whe
 | `PIHOLE_URL` | Pi-hole URL | `http://pihole:80` |
 | `PIHOLE_PASSWORD` | Pi-hole admin password | - |
 | `SYNC_INTERVAL` | Sync interval in ms | `60000` |
-| `DEFAULT_DOMAIN` | Default domain suffix | `local` |
+| `REVERSE_PROXY_IPS` | Reverse proxy IPs (comma-separated, required) | - |
+
+## How It Works
+
+1. Fetches all routers from Traefik's `/api/http/routers` endpoint
+2. Filters to only routers that contain a Host rule
+3. Extracts all Host values from the router rules
+4. Creates DNS records in Pi-hole for each host × reverse proxy IP combination
+
+### REVERSE_PROXY_IPS
+
+This is a **required** environment variable that specifies the IP address(es) of your reverse proxy server(s). This is typically the IP of your Traefik instance.
+
+Examples:
+```bash
+# Single IP
+REVERSE_PROXY_IPS=192.168.1.200
+
+# Multiple IPs (will create DNS records for each)
+REVERSE_PROXY_IPS=192.168.1.200,192.168.1.201
+```
 
 ## Development
 
@@ -67,6 +88,7 @@ docker run -d \
   -e TRAEFIK_API_URL=http://traefik:8080 \
   -e PIHOLE_URL=http://pihole:80 \
   -e PIHOLE_PASSWORD=your_password \
+  -e REVERSE_PROXY_IPS=192.168.1.200 \
   traefik-pihole-dns-sync
 ```
 
