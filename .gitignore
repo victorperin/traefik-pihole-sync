@@ -31,6 +31,8 @@ logs/
 
 # Test coverage
 coverage/
+yc_output/
+test-results/
 
 # Temporary files
 tmp/
