@@ -22,9 +22,9 @@ export class PiHoleService {
         },
       });
 
-      console.log(`DNS record added: ${domain} -> ${ip}`);
+      console.log(`[INFO] DNS record added: ${domain} -> ${ip}`);
     } catch (error) {
-      console.error(`Error adding DNS record for ${domain}:`, error);
+      console.error(`[ERROR] Failed to add DNS record for ${domain}:`, error);
       // Don't throw - continue with other records even if one fails
     }
   }
@@ -39,9 +39,9 @@ export class PiHoleService {
         },
       });
 
-      console.log(`DNS record removed: ${domain}`);
+      console.log(`[INFO] DNS record removed: ${domain}`);
     } catch (error) {
-      console.error(`Error removing DNS record for ${domain}:`, error);
+      console.error(`[ERROR] Failed to remove DNS record for ${domain}:`, error);
     }
   }
 
@@ -57,7 +57,7 @@ export class PiHoleService {
 
       return response.data.domains || [];
     } catch (error) {
-      console.error('Error listing DNS records:', error);
+      console.error('[ERROR] Failed to list DNS records:', error);
       return [];
     }
   }

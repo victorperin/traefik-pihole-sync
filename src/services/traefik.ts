@@ -37,7 +37,7 @@ export class TraefikService {
 
       return services;
     } catch (error) {
-      console.error('Error fetching Traefik services:', error);
+      console.error('[ERROR] Failed to fetch Traefik services:', error);
       throw error;
     }
   }
