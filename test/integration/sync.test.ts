@@ -7,7 +7,7 @@
 
 import { TraefikService } from '../../src/services/traefik';
 import { PiHoleService, DnsRecord, generateDiff } from '../../src/services/pihole';
-import { startDockerCompose, stopDockerCompose, waitForService } from './setup';
+import { isDockerAvailable, isDockerInitialized, TEST_PORTS } from './setup';
 
 describe('Full Sync Flow Integration', () => {
   let traefikService: TraefikService | null = null;
@@ -16,57 +16,40 @@ describe('Full Sync Flow Integration', () => {
   let piholeUrl: string;
   const password = 'testpassword';
   const reverseProxyIps = ['xxx.xxx.xxx.xxx'];
-  let dockerAvailable = false;
 
-  beforeAll(async () => {
-    // Check if Docker is available
-    try {
-      await startDockerCompose();
-      dockerAvailable = true;
-    } catch (error) {
-      console.warn('Docker not available, skipping integration tests');
+  beforeAll(() => {
+    // Skip all tests if Docker is not available
+    if (!isDockerAvailable() || !isDockerInitialized()) {
       return;
     }
 
-    if (!dockerAvailable) return;
-
-    traefikUrl = process.env.TRAEFIK_API_URL || 'http://localhost:1081';
-    piholeUrl = process.env.PIHOLE_URL || 'http://localhost:1080';
-
-    // Wait for services
-    const traefikReady = await waitForService(`${traefikUrl}/api/http/routers`, 60, 2000);
-    const piholeReady = await waitForService(`${piholeUrl}/api/status`, 60, 2000);
-    
-    if (!traefikReady || !piholeReady) {
-      throw new Error('Services not ready');
-    }
+    traefikUrl = process.env.TRAEFIK_API_URL || `http://localhost:${TEST_PORTS.traefik}`;
+    piholeUrl = process.env.PIHOLE_URL || `http://localhost:${TEST_PORTS.pihole}`;
 
     traefikService = new TraefikService(traefikUrl);
     piholeService = new PiHoleService(piholeUrl, password);
-  }, 180000);
-
-  afterAll(async () => {
-    if (dockerAvailable) {
-      await stopDockerCompose();
-    }
   });
 
   beforeEach(async () => {
-    if (!dockerAvailable || !piholeService) {
+    if (!isDockerAvailable() || !isDockerInitialized() || !piholeService) {
       return;
     }
 
     // Clean up test records
-    const records = await piholeService.getAllDnsRecords();
-    for (const record of records) {
-      if (record.domain.includes('test') || record.domain.includes('example')) {
-        await piholeService.removeDnsRecord(record.domain, record.ip);
+    try {
+      const records = await piholeService.getAllDnsRecords();
+      for (const record of records) {
+        if (record.domain.includes('test') || record.domain.includes('example')) {
+          await piholeService.removeDnsRecord(record.domain, record.ip);
+        }
       }
+    } catch (error) {
+      // Ignore cleanup errors
     }
   });
 
   const skipIfNoDocker = () => {
-    if (!dockerAvailable || !traefikService || !piholeService) {
+    if (!isDockerAvailable() || !isDockerInitialized() || !traefikService || !piholeService) {
       return true;
     }
     return false;
@@ -114,7 +97,6 @@ describe('Full Sync Flow Integration', () => {
       const updatedRecords = await piholeService!.getAllDnsRecords();
       
       // Check that we have some records from the sync
-      // Note: The actual number depends on Traefik configuration
       expect(updatedRecords.length).toBeGreaterThanOrEqual(0);
     });
 

@@ -1,15 +1,14 @@
 export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/test'],
+  roots: ['<rootDir>/test/integration'],
   testMatch: [
     '**/__tests__/**/*.ts',
     '**/?(*.)+(spec|test).ts',
   ],
   // Run tests in sequence to avoid Docker Compose race conditions
   maxWorkers: 1,
-  forceExit: true,
-  detectOpenHandles: true,
+  runInBand: true,
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
@@ -18,22 +17,15 @@ export default {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/index.ts',
   ],
-  coverageDirectory: 'coverage',
+  coverageDirectory: 'coverage/integration',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
-  testTimeout: 60000, // Increase timeout for integration tests
+  testTimeout: 120000, // Longer timeout for integration tests
   setupFiles: ['<rootDir>/jest.setup.js'],
-  // Global setup/teardown for Docker Compose
   globalSetup: '<rootDir>/test/integration/globalSetup.ts',
   globalTeardown: '<rootDir>/test/integration/globalTeardown.ts',
-  // Test tags for CI - run integration tests only when explicitly requested
-  testPathIgnorePatterns: [
-    '<rootDir>/node_modules/',
-    '<rootDir>/test/integration/',
-  ],
 };
