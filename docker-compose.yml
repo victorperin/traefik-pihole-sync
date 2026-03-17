@@ -14,6 +14,7 @@ services:
       - PIHOLE_PASSWORD=${PIHOLE_PASSWORD}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-60000}
       - DEFAULT_DOMAIN=${DEFAULT_DOMAIN:-local}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
       - ./config:/app/config:ro
     networks:

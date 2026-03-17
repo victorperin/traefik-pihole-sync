@@ -4,6 +4,7 @@ export interface Config {
   piholePassword: string;
   syncInterval: number;
   defaultDomain: string;
+  logLevel: string;
 }
 
 export function getConfig(): Config {
@@ -13,5 +14,6 @@ export function getConfig(): Config {
     piholePassword: process.env.PIHOLE_PASSWORD || '',
     syncInterval: parseInt(process.env.SYNC_INTERVAL || '60000', 10),
     defaultDomain: process.env.DEFAULT_DOMAIN || 'local',
+    logLevel: process.env.LOG_LEVEL || 'info',
   };
 }

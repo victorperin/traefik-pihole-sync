@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../logger';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -44,7 +45,7 @@ export class TraefikService {
 
       return services;
     } catch (error) {
-      console.error('[ERROR] Failed to fetch Traefik services:', getErrorMessage(error));
+      logger.error({ err: error }, 'Failed to fetch Traefik services');
       throw error;
     }
   }
