@@ -26,14 +26,9 @@ export default {
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
-  testTimeout: 60000, // Increase timeout for integration tests
+  testTimeout: 120000, // Longer timeout for integration tests
   setupFiles: ['<rootDir>/jest.setup.js'],
   // Global setup/teardown for Docker Compose
   globalSetup: '<rootDir>/test/integration/globalSetup.ts',
   globalTeardown: '<rootDir>/test/integration/globalTeardown.ts',
-  // Test tags for CI - run integration tests only when explicitly requested
-  testPathIgnorePatterns: [
-    '<rootDir>/node_modules/',
-    '<rootDir>/test/integration/',
-  ],
 };

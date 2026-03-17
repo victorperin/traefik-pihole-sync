@@ -17,8 +17,6 @@ process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
 // Global state to track Docker Compose lifecycle
 let dockerCompose: any = null;
-let dockerAvailable = false;
-let dockerInitialized = false;
 
 // Test ports (mapped from docker-compose.yml)
 export const TEST_PORTS = {
@@ -32,7 +30,7 @@ export const TEST_PORTS = {
 /**
  * Checks if Docker is available
  */
-export async function checkDockerAvailable(): Promise<boolean> {
+async function checkDockerAvailable(): Promise<boolean> {
   try {
     const { exec } = await import('child_process');
     const { promisify } = await import('util');
@@ -47,16 +45,13 @@ export async function checkDockerAvailable(): Promise<boolean> {
 /**
  * Starts the Docker Compose services for integration testing
  * Uses the existing docker-compose.yml file
- * Only starts once - subsequent calls return the same instance
  */
 export async function startDockerCompose(): Promise<any> {
-  // Return existing instance if already started
   if (dockerCompose) {
     return dockerCompose;
   }
 
-  // Check Docker availability first
-  dockerAvailable = await checkDockerAvailable();
+  const dockerAvailable = await checkDockerAvailable();
   if (!dockerAvailable) {
     throw new Error('Docker is not available');
   }
@@ -72,7 +67,6 @@ export async function startDockerCompose(): Promise<any> {
   ).up();
 
   console.log('Docker Compose started successfully');
-  dockerInitialized = true;
   return dockerCompose;
 }
 
@@ -88,23 +82,8 @@ export async function stopDockerCompose(): Promise<void> {
       console.warn('Error stopping Docker Compose:', error);
     }
     dockerCompose = null;
-    dockerInitialized = false;
     console.log('Docker Compose stopped');
   }
-}
-
-/**
- * Returns whether Docker is available
- */
-export function isDockerAvailable(): boolean {
-  return dockerAvailable;
-}
-
-/**
- * Returns whether Docker has been initialized
- */
-export function isDockerInitialized(): boolean {
-  return dockerInitialized;
 }
 
 /**
@@ -161,7 +140,7 @@ export async function setupIntegrationTests(): Promise<boolean> {
     await startDockerCompose();
     return true;
   } catch (error) {
-    console.warn('Docker not available, skipping integration tests');
+    console.error('Failed to setup integration tests:', error);
     return false;
   }
 }
