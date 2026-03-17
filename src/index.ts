@@ -36,6 +36,13 @@ async function main() {
           continue;
         }
 
+        // Skip regex patterns (e.g., ^.+$ or regex expressions)
+        const isRegex = /^\^.*\$/.test(host) || /[?+*]/.test(host);
+        if (isRegex) {
+          logger.debug(`Skipping regex pattern: ${host}`);
+          continue;
+        }
+
         // Skip internal/localhost domains
         const isLocalhost = host === 'localhost' || host.includes('.local') || host.endsWith('.internal');
         if (isLocalhost) {
