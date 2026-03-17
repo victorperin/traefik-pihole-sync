@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { logger } from './logger';
+import { getConfig } from './config';
 import { TraefikService } from './services/traefik';
 import { PiHoleService } from './services/pihole';
 
@@ -15,12 +16,10 @@ interface SyncResult {
 async function main() {
   logger.info('Starting Traefik to Pi-hole DNS Sync...');
 
-  const traefikUrl = process.env.TRAEFIK_API_URL || 'http://traefik:8080';
-  const piholeUrl = process.env.PIHOLE_URL || 'http://pihole:80';
-  const piholePassword = process.env.PIHOLE_PASSWORD || '';
-  const syncInterval = parseInt(process.env.SYNC_INTERVAL || '60000', 10);
+  const config = getConfig();
+  const { traefikApiUrl, piholeUrl, piholePassword, syncInterval, defaultDomain } = config;
 
-  const traefikService = new TraefikService(traefikUrl);
+  const traefikService = new TraefikService(traefikApiUrl, defaultDomain);
   const piholeService = new PiHoleService(piholeUrl, piholePassword);
 
   async function sync() {
