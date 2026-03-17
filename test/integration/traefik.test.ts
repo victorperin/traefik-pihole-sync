@@ -9,17 +9,21 @@ import { TraefikService } from '../../src/services/traefik';
 import { startDockerCompose, stopDockerCompose, waitForService } from './setup';
 
 describe('TraefikService Integration', () => {
-  let traefikService: TraefikService;
+  let traefikService: TraefikService | null = null;
   let traefikUrl: string;
+  let dockerAvailable = false;
 
   beforeAll(async () => {
     // Check if Docker is available
     try {
       await startDockerCompose();
+      dockerAvailable = true;
     } catch (error) {
       console.warn('Docker not available, skipping integration tests');
       return;
     }
+
+    if (!dockerAvailable) return;
 
     // Get Traefik URL from docker-compose
     traefikUrl = process.env.TRAEFIK_API_URL || 'http://localhost:1081';
@@ -34,28 +38,35 @@ describe('TraefikService Integration', () => {
   }, 120000);
 
   afterAll(async () => {
-    await stopDockerCompose();
+    if (dockerAvailable) {
+      await stopDockerCompose();
+    }
   });
+
+  const skipIfNoDocker = () => {
+    if (!dockerAvailable || !traefikService) {
+      return true;
+    }
+    return false;
+  };
 
   describe('getRouters', () => {
     it('should fetch routers from Traefik API', async () => {
-      if (!traefikService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      const routers = await traefikService.getRouters();
+      const routers = await traefikService!.getRouters();
 
       expect(Array.isArray(routers)).toBe(true);
     });
 
     it('should return routers with name and hosts properties', async () => {
-      if (!traefikService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      const routers = await traefikService.getRouters();
+      const routers = await traefikService!.getRouters();
 
       for (const router of routers) {
         expect(router).toHaveProperty('name');
@@ -65,12 +76,11 @@ describe('TraefikService Integration', () => {
     });
 
     it('should handle empty routers response', async () => {
-      if (!traefikService) {
-        pending('Docker not available');
+      if (skipIfNoDocker()) {
         return;
       }
 
-      const routers = await traefikService.getRouters();
+      const routers = await traefikService!.getRouters();
 
       // Traefik should have some routers configured via docker-compose
       // This test ensures we handle the response correctly
