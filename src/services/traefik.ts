@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 export interface TraefikServiceInfo {
   name: string;
   ip?: string;
@@ -37,7 +44,7 @@ export class TraefikService {
 
       return services;
     } catch (error) {
-      console.error('[ERROR] Failed to fetch Traefik services:', error);
+      console.error('[ERROR] Failed to fetch Traefik services:', getErrorMessage(error));
       throw error;
     }
   }

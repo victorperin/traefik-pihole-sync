@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 export class PiHoleService {
   private baseUrl: string;
   private password: string;
@@ -24,7 +31,7 @@ export class PiHoleService {
 
       console.log(`[INFO] DNS record added: ${domain} -> ${ip}`);
     } catch (error) {
-      console.error(`[ERROR] Failed to add DNS record for ${domain}:`, error);
+      console.error(`[ERROR] Failed to add DNS record for ${domain}:`, getErrorMessage(error));
       // Don't throw - continue with other records even if one fails
     }
   }
@@ -41,7 +48,7 @@ export class PiHoleService {
 
       console.log(`[INFO] DNS record removed: ${domain}`);
     } catch (error) {
-      console.error(`[ERROR] Failed to remove DNS record for ${domain}:`, error);
+      console.error(`[ERROR] Failed to remove DNS record for ${domain}:`, getErrorMessage(error));
     }
   }
 
@@ -57,7 +64,7 @@ export class PiHoleService {
 
       return response.data.domains || [];
     } catch (error) {
-      console.error('[ERROR] Failed to list DNS records:', error);
+      console.error('[ERROR] Failed to list DNS records:', getErrorMessage(error));
       return [];
     }
   }
