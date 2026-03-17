@@ -1,18 +1,19 @@
 import dotenv from 'dotenv';
+dotenv.config();
+
+import { logger } from './logger';
 import { TraefikService } from './services/traefik';
 import { PiHoleService } from './services/pihole';
 
-dotenv.config();
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
+interface SyncResult {
+  domain: string;
+  ip: string;
+  status: 'synced' | 'skipped';
+  reason?: string;
 }
 
 async function main() {
-  console.log('[INFO] Starting Traefik to Pi-hole DNS Sync...');
+  logger.info('Starting Traefik to Pi-hole DNS Sync...');
 
   const traefikUrl = process.env.TRAEFIK_API_URL || 'http://traefik:8080';
   const piholeUrl = process.env.PIHOLE_URL || 'http://pihole:80';
@@ -23,37 +24,54 @@ async function main() {
   const piholeService = new PiHoleService(piholeUrl, piholePassword);
 
   async function sync() {
+    const results: SyncResult[] = [];
+
     try {
-      console.log('[INFO] Fetching services from Traefik...');
+      logger.info('Fetching services from Traefik...');
       const services = await traefikService.getServices();
       
-      console.log(`[INFO] Found ${services.length} service(s) in Traefik`);
+      logger.info(`Found ${services.length} service(s) in Traefik`);
 
       for (const service of services) {
         const domain = `${service.name}.${service.domain || 'local'}`;
+        const ip = service.ip || '127.0.0.1';
         
-        // DEBUG: Log domain details for diagnosis
-        console.log(`[DEBUG] Processing domain: "${domain}", name: "${service.name}", ip: "${service.ip}"`);
+        logger.debug(`Processing domain: "${domain}", name: "${service.name}", ip: "${ip}"`);
         
         // Check for internal/local domains that should be skipped
         const isLocalDomain = (service.domain || 'local') === 'local';
         const hasSwarmPrefix = service.name.includes('@');
         
-        console.log(`[DEBUG] isLocalDomain: ${isLocalDomain}, hasSwarmPrefix: ${hasSwarmPrefix}`);
+        logger.debug(`isLocalDomain: ${isLocalDomain}, hasSwarmPrefix: ${hasSwarmPrefix}`);
         
         // Skip internal Docker/Traefik routes (.local domains and @ prefixed names)
         if (isLocalDomain || hasSwarmPrefix) {
-          console.log(`[INFO] Skipping internal/local domain: ${domain}`);
+          logger.debug(`Skipping internal/local domain: ${domain}`);
+          results.push({ domain, ip, status: 'skipped', reason: 'internal/local domain' });
           continue;
         }
         
-        console.log(`[INFO] Syncing: ${domain} -> ${service.ip || '127.0.0.1'}`);
-        await piholeService.addDnsRecord(domain, service.ip || '127.0.0.1');
+        logger.info(`Syncing: ${domain} -> ${ip}`);
+        await piholeService.addDnsRecord(domain, ip);
+        results.push({ domain, ip, status: 'synced' });
       }
 
-      console.log('[INFO] Sync completed successfully');
+      // Log summary
+      logger.info('--- Sync Results ---');
+      for (const result of results) {
+        if (result.status === 'synced') {
+          logger.info(`  ✓ ${result.domain} -> ${result.ip}`);
+        } else {
+          logger.debug(`  - ${result.domain} (skipped: ${result.reason})`);
+        }
+      }
+      
+      const syncedCount = results.filter(r => r.status === 'synced').length;
+      const skippedCount = results.filter(r => r.status === 'skipped').length;
+      logger.info(`Synced: ${syncedCount}, Skipped: ${skippedCount}, Total: ${results.length}`);
+
     } catch (error) {
-      console.error('[ERROR] Sync failed:', getErrorMessage(error));
+      logger.error({ err: error }, 'Sync failed');
     }
   }
 
@@ -64,4 +82,4 @@ async function main() {
   setInterval(sync, syncInterval);
 }
 
-main().catch(console.error);
+main().catch(logger.error);
