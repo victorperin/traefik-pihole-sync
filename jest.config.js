@@ -26,9 +26,9 @@ export default {
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
-  testTimeout: 120000, // Longer timeout for integration tests
+  testTimeout: 30000, // Shorter timeout since no containers to start
   setupFiles: ['<rootDir>/jest.setup.js'],
-  // Global setup/teardown for Docker Compose
+  // Global setup/teardown for mocked services
   globalSetup: '<rootDir>/test/integration/globalSetup.ts',
   globalTeardown: '<rootDir>/test/integration/globalTeardown.ts',
 };

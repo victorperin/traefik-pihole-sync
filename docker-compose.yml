@@ -61,7 +61,7 @@ services:
     container_name: traefik
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "1081:8080"
       - "80:80"
       - "443:443"
     volumes:
@@ -80,7 +80,7 @@ services:
     ports:
       - "8053:53/tcp"
       - "8053:53/udp"
-      - "8081:80"
+      - "1080:80"
     environment:
       - WEBPASSWORD=${PIHOLE_PASSWORD:-admin}
       - PIHOLE_DNS_=xxx.xxx.xxx.xxx
@@ -93,6 +93,7 @@ services:
     dns:
       - xxx.xxx.xxx.xxx
       - xxx.xxx.xxx.xxx
+    shm_size: '1gb'
 
 networks:
   dns-sync:
