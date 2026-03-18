@@ -8,7 +8,6 @@
 
 import axios from 'axios';
 import { PiHoleService } from '../../src/services/pihole';
-import { resetTestData } from './setup';
 
 // Module-level state for mock
 let dnsRecords: string[] = [];

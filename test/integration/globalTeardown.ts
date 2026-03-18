@@ -1,13 +1,7 @@
 /**
- * Global teardown for Jest - stops MSW server after all tests
+ * Global teardown for Jest - runs after all tests
  */
 
-import { teardownIntegrationTests } from './setup';
-
 export default async function globalTeardown() {
-  console.log('\n=== Global Teardown: Stopping integration tests ===\n');
-
-  await teardownIntegrationTests();
-
-  console.log('\n=== Global Teardown Complete ===\n');
+  console.log('\n=== Global Teardown: Integration tests complete ===\n');
 }
