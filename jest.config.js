@@ -28,7 +28,4 @@ export default {
   restoreMocks: true,
   testTimeout: 30000, // Shorter timeout since no containers to start
   setupFiles: ['<rootDir>/jest.setup.js'],
-  // Global setup/teardown for mocked services
-  globalSetup: '<rootDir>/test/integration/globalSetup.ts',
-  globalTeardown: '<rootDir>/test/integration/globalTeardown.ts',
 };
