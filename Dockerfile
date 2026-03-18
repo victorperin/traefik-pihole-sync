@@ -21,6 +21,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Set default production environment
+ENV NODE_ENV=production
+
 # Create non-root user with fixed UID/GID for Kubernetes compatibility
 RUN addgroup -S nodejs || true && \
     adduser -S appuser -u 1001 -G nodejs || true
@@ -46,10 +49,6 @@ USER appuser
 
 # Expose only the application port
 EXPOSE 3000
-
-# Health check - verify Node.js process is running and responding
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # Start the application
 CMD ["node", "dist/index.js"]
