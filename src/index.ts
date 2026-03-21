@@ -41,13 +41,17 @@ async function main() {
   async function sync() {
     try {
       const routers = await traefikService.getRouters();
-      logger.info(`Found ${routers.length} router(s) with Host rules`);
+      logger.debug(`Found ${routers.length} router(s) with Host rules`);
 
       const desiredRecords = buildDesiredRecords(routers);
       const currentRecords = await piholeService.getAllDnsRecords();
 
       const diff = generateDiff(currentRecords, desiredRecords);
-      logger.info(`DNS Diff: ${diff.toAdd.length} to add, ${diff.toRemove.length} to remove, ${diff.toChange.length} to change`);
+      logger.debug(`DNS Diff: ${diff.toAdd.length} to add, ${diff.toRemove.length} to remove, ${diff.toChange.length} to change`);
+
+      if (diff.toAdd.length > 0 || diff.toRemove.length > 0 || diff.toChange.length > 0) {
+        logger.info(`DNS Diff: ${diff.toAdd.length} to add, ${diff.toRemove.length} to remove, ${diff.toChange.length} to change`);
+      }
 
       // Apply changes in order: remove, change, add
       for (const record of diff.toRemove) {
@@ -69,7 +73,11 @@ async function main() {
         await piholeService.addDnsRecord(record.domain, record.ip);
       }
 
-      logger.info(`Sync complete: Added ${diff.toAdd.length}, Removed ${diff.toRemove.length}, Changed ${diff.toChange.length}`);
+      logger.debug(`Sync complete: Added ${diff.toAdd.length}, Removed ${diff.toRemove.length}, Changed ${diff.toChange.length}`);
+
+      if (diff.toAdd.length > 0 || diff.toRemove.length > 0 || diff.toChange.length > 0) {
+        logger.info(`Sync complete: Added ${diff.toAdd.length}, Removed ${diff.toRemove.length}, Changed ${diff.toChange.length}`);
+      }
     } catch (error) {
       logger.error({ err: error }, 'Sync failed');
     }
