@@ -7,6 +7,11 @@ services:
       dockerfile: Dockerfile
     container_name: traefik-pihole-dns-sync
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m,mode=1777
     environment:
       - NODE_ENV=production
       - TRAEFIK_API_URL=${TRAEFIK_API_URL:-http://traefik:8080}
