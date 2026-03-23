@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../logger';
+import { withRetry } from '../utils/retry';
 
 export interface TraefikRouterInfo {
   name: string;
@@ -33,41 +34,43 @@ export class TraefikService {
    * - HostIn(`example.com`, `www.example.com`)
    */
   async getRouters(): Promise<TraefikRouterInfo[]> {
-    try {
-      // Traefik API v1 - get http routers
-      const response = await axios.get(`${this.baseUrl}/api/http/routers`);
-      
-      const routers: TraefikRouterInfo[] = [];
-      
-      // Parse Traefik routers response
-      // Response is an object with router names as keys
-      if (response.data && typeof response.data === 'object') {
-        for (const [routerName, routerConfig] of Object.entries(response.data)) {
-          const config = routerConfig as { rule?: string };
-          
-          // Skip routers without rules
-          if (!config.rule) {
-            continue;
-          }
-          
-          // Extract Host values from the rule
-          const hosts = this.extractHostsFromRule(config.rule);
-          
-          if (hosts.length > 0) {
-            routers.push({
-              name: routerName,
-              hosts,
-            });
+    return withRetry(async () => {
+      try {
+        // Traefik API v1 - get http routers
+        const response = await axios.get(`${this.baseUrl}/api/http/routers`);
+        
+        const routers: TraefikRouterInfo[] = [];
+        
+        // Parse Traefik routers response
+        // Response is an object with router names as keys
+        if (response.data && typeof response.data === 'object') {
+          for (const [routerName, routerConfig] of Object.entries(response.data)) {
+            const config = routerConfig as { rule?: string };
+            
+            // Skip routers without rules
+            if (!config.rule) {
+              continue;
+            }
+            
+            // Extract Host values from the rule
+            const hosts = this.extractHostsFromRule(config.rule);
+            
+            if (hosts.length > 0) {
+              routers.push({
+                name: routerName,
+                hosts,
+              });
+            }
           }
         }
-      }
 
-      logger.debug({ count: routers.length }, 'Found routers with Host rules');
-      return routers;
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to fetch Traefik routers');
-      throw error;
-    }
+        logger.debug({ count: routers.length }, 'Found routers with Host rules');
+        return routers;
+      } catch (error) {
+        logger.error({ err: error }, 'Failed to fetch Traefik routers');
+        throw error;
+      }
+    });
   }
 
   /**

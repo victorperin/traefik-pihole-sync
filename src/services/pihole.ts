@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../logger';
+import { withRetry } from '../utils/retry';
 
 export interface DnsRecord {
   domain: string;
@@ -28,23 +29,25 @@ export class PiHoleService {
    * Example: PUT /api/config/dns/hosts/xxx.xxx.xxx.xxx domain.com
    */
   async addDnsRecord(domain: string, ip: string): Promise<void> {
-    try {
-      // Pi-hole v6 API: PUT /api/config/dns/hosts/{ip} {domain}
-      await axios.put(
-        `${this.baseUrl}/api/config/dns/hosts/${ip} ${domain}`,
-        {
-          params: { auth: this.password },
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    await withRetry(async () => {
+      try {
+        // Pi-hole v6 API: PUT /api/config/dns/hosts/{ip} {domain}
+        await axios.put(
+          `${this.baseUrl}/api/config/dns/hosts/${ip} ${domain}`,
+          {
+            params: { auth: this.password },
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
-      logger.info(`DNS record added: ${domain} -> ${ip}`);
-    } catch (error) {
-      logger.error({ err: error }, `Failed to add DNS record for ${domain}`);
-      // Don't throw - continue with other records even if one fails
-    }
+        logger.info(`DNS record added: ${domain} -> ${ip}`);
+      } catch (error) {
+        logger.error({ err: error }, `Failed to add DNS record for ${domain}`);
+        // Don't throw - continue with other records even if one fails
+      }
+    });
   }
 
   /**
@@ -52,19 +55,21 @@ export class PiHoleService {
    * Endpoint: DELETE /api/config/dns/hosts/{ip}/{domain}
    */
   async removeDnsRecord(domain: string, ip: string): Promise<void> {
-    try {
-      // Pi-hole v6 API: DELETE /api/config/dns/hosts/{ip}/{domain}
-      await axios.delete(
-        `${this.baseUrl}/api/config/dns/hosts/${ip} ${domain}`,
-        {
-          params: { auth: this.password },
-        }
-      );
+    await withRetry(async () => {
+      try {
+        // Pi-hole v6 API: DELETE /api/config/dns/hosts/{ip}/{domain}
+        await axios.delete(
+          `${this.baseUrl}/api/config/dns/hosts/${ip} ${domain}`,
+          {
+            params: { auth: this.password },
+          }
+        );
 
-      logger.info(`DNS record removed: ${domain}`);
-    } catch (error) {
-      logger.error({ err: error }, `Failed to remove DNS record for ${domain}`);
-    }
+        logger.info(`DNS record removed: ${domain}`);
+      } catch (error) {
+        logger.error({ err: error }, `Failed to remove DNS record for ${domain}`);
+      }
+    });
   }
 
   /**
@@ -73,17 +78,19 @@ export class PiHoleService {
    * Returns array like: ["xxx.xxx.xxx.xxx domain1.com", "xxx.xxx.xxx.xxx domain2.com"]
    */
   async listDnsRecords(): Promise<string[]> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/api/config/dns/hosts`, {
-        params: { auth: this.password },
-      });
+    return withRetry(async () => {
+      try {
+        const response = await axios.get(`${this.baseUrl}/api/config/dns/hosts`, {
+          params: { auth: this.password },
+        });
 
-      // Response is an array like: ["xxx.xxx.xxx.xxx domain1.com", "xxx.xxx.xxx.xxx domain2.com"]
-      return response.data?.config?.dns?.hosts || response.data || [];
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to list DNS records');
-      return [];
-    }
+        // Response is an array like: ["xxx.xxx.xxx.xxx domain1.com", "xxx.xxx.xxx.xxx domain2.com"]
+        return response.data?.config?.dns?.hosts || response.data || [];
+      } catch (error) {
+        logger.error({ err: error }, 'Failed to list DNS records');
+        return [];
+      }
+    });
   }
 
   /**
