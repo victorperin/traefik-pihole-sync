@@ -7,12 +7,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "debug": "node --inspect=9229 --use-system-ca -r ts-node/register src/index.ts",
-    "debug:watch": "ts-node --inspect=xxx.xxx.xxx.xxx:9229 src/index.ts",
     "docker:build": "docker build -t traefik-pihole-dns-sync .",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:debug": "docker-compose up --build",
     "test": "jest",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
