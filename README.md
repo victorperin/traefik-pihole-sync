@@ -20,6 +20,43 @@ A Node.js application that synchronizes DNS records from Traefik to Pi-hole. Whe
 
 ## Quick Start
 
+### Using Docker Run
+
+```bash
+docker run -d \
+  --name traefik-pihole-dns-sync \
+  -e TRAEFIK_API_URL=http://traefik:8080 \
+  -e PIHOLE_URL=http://pihole:80 \
+  -e PIHOLE_PASSWORD=your_password \
+  -e REVERSE_PROXY_IPS=xxx.xxx.xxx.xxx \
+  ghcr.io/victorperin/traefik-pihole-sync
+```
+
+### Using Docker Compose
+
+Create a `docker-compose.yml`:
+
+```yaml
+services:
+  traefik-pihole-dns-sync:
+    image: ghcr.io/victorperin/traefik-pihole-sync
+    container_name: traefik-pihole-dns-sync
+    environment:
+      - TRAEFIK_API_URL=http://traefik:8080
+      - PIHOLE_URL=http://pihole:80
+      - PIHOLE_PASSWORD=your_password
+      - REVERSE_PROXY_IPS=xxx.xxx.xxx.xxx
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+### Building from Source
+
+For development, you can build and run from source:
+
 1. Clone the repository
 2. Copy the environment file:
    ```bash
@@ -61,21 +98,6 @@ REVERSE_PROXY_IPS=xxx.xxx.xxx.xxx
 
 # Multiple IPs (will create DNS records for each)
 REVERSE_PROXY_IPS=xxx.xxx.xxx.xxx,xxx.xxx.xxx.xxx
-```
-
-## Docker
-
-```bash
-# Build the image
-docker build -t traefik-pihole-dns-sync .
-
-# Run the container
-docker run -d \
-  -e TRAEFIK_API_URL=http://traefik:8080 \
-  -e PIHOLE_URL=http://pihole:80 \
-  -e PIHOLE_PASSWORD=your_password \
-  -e REVERSE_PROXY_IPS=xxx.xxx.xxx.xxx \
-  traefik-pihole-dns-sync
 ```
 
 ## Development
