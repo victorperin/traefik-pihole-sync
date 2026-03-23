@@ -240,7 +240,7 @@ describe('Full Sync Flow Integration', () => {
 
       // Desired: same domain but different IP
       const desiredRecords: DnsRecord[] = [
-        { domain: 'change.test.com', ip: 'xxx.xxx.xxx.xxx' },
+        { domain: 'change.test.com', ip: 'yyy.yyy.yyy.yyy' },
       ];
 
       // Generate diff
@@ -248,7 +248,7 @@ describe('Full Sync Flow Integration', () => {
 
       // Should have change operation
       expect(diff.toChange.length).toBe(1);
-      expect(diff.toChange[0].ip).toBe('xxx.xxx.xxx.xxx');
+      expect(diff.toChange[0].ip).toBe('yyy.yyy.yyy.yyy');
 
       // Mock DELETE and PUT for change
       mockedAxios.delete.mockResolvedValueOnce({ data: { status: 'success' } });

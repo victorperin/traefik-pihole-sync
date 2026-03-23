@@ -18,7 +18,6 @@ services:
       - PIHOLE_URL=${PIHOLE_URL:-http://pihole:80}
       - PIHOLE_PASSWORD=${PIHOLE_PASSWORD}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-60000}
-      - DEFAULT_DOMAIN=${DEFAULT_DOMAIN:-local}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - REVERSE_PROXY_IPS=${REVERSE_PROXY_IPS}
     networks:

@@ -6,5 +6,4 @@ process.env.PIHOLE_PASSWORD = process.env.PIHOLE_PASSWORD || 'testpassword';
 process.env.TRAEFIK_API_URL = process.env.TRAEFIK_API_URL || 'http://traefik:8080';
 process.env.PIHOLE_URL = process.env.PIHOLE_URL || 'http://pihole:80';
 process.env.SYNC_INTERVAL = process.env.SYNC_INTERVAL || '60000';
-process.env.DEFAULT_DOMAIN = process.env.DEFAULT_DOMAIN || 'local';
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'info';

@@ -82,8 +82,8 @@ describe('generateDiff', () => {
   describe('records to change', () => {
     it('should return records with same domain but different IP as toChange', () => {
       const currentWithDifferentIP: DnsRecord[] = [
-        { domain: 'example.com', ip: 'xxx.xxx.xxx.xxx' },
-        { domain: 'changed.example.com', ip: 'xxx.xxx.xxx.xxx' }, // different IP
+        { domain: 'example.com', ip: 'xxx.xxx.xxx.xxx' }, // same IP - not a change
+        { domain: 'changed.example.com', ip: 'yyy.yyy.yyy.yyy' }, // different IP
       ];
       
       const diff = generateDiff(currentWithDifferentIP, desiredRecords);

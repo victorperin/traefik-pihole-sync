@@ -41,7 +41,6 @@ A Node.js application that synchronizes DNS records from Traefik to Pi-hole. Whe
 | `SYNC_INTERVAL` | Sync interval in milliseconds | `60000` |
 | `REVERSE_PROXY_IPS` | Reverse proxy IPs (comma-separated, required) | - |
 | `LOG_LEVEL` | Logging level (debug, info, warn, error) | `info` |
-| `DEFAULT_DOMAIN` | Default domain suffix | `local` |
 
 ## How It Works
 

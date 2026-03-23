@@ -28,7 +28,6 @@ describe('getConfig', () => {
       delete process.env.PIHOLE_URL;
       delete process.env.PIHOLE_PASSWORD;
       delete process.env.SYNC_INTERVAL;
-      delete process.env.DEFAULT_DOMAIN;
       delete process.env.LOG_LEVEL;
       delete process.env.REVERSE_PROXY_IPS;
 
@@ -60,7 +59,6 @@ describe('getConfig', () => {
       expect(config.piholeUrl).toBe('http://pihole:80');
       expect(config.piholePassword).toBe('');
       expect(config.syncInterval).toBe(60000);
-      expect(config.defaultDomain).toBe('local');
       expect(config.logLevel).toBe('info');
     });
 
@@ -94,7 +92,6 @@ describe('getConfig', () => {
       process.env.PIHOLE_URL = 'http://custom-pihole:8080';
       process.env.PIHOLE_PASSWORD = 'testpassword123';
       process.env.SYNC_INTERVAL = '30000';
-      process.env.DEFAULT_DOMAIN = 'custom.domain';
       process.env.LOG_LEVEL = 'debug';
 
       const config = getConfig();
@@ -103,7 +100,6 @@ describe('getConfig', () => {
       expect(config.piholeUrl).toBe('http://custom-pihole:8080');
       expect(config.piholePassword).toBe('testpassword123');
       expect(config.syncInterval).toBe(30000);
-      expect(config.defaultDomain).toBe('custom.domain');
       expect(config.logLevel).toBe('debug');
     });
 
@@ -163,7 +159,6 @@ describe('getConfig', () => {
       process.env.PIHOLE_URL = 'http://pihole:80';
       process.env.PIHOLE_PASSWORD = 'password';
       process.env.SYNC_INTERVAL = '60000';
-      process.env.DEFAULT_DOMAIN = 'local';
       process.env.LOG_LEVEL = 'info';
 
       const config = getConfig();
@@ -173,7 +168,6 @@ describe('getConfig', () => {
       expect(config).toHaveProperty('piholeUrl');
       expect(config).toHaveProperty('piholePassword');
       expect(config).toHaveProperty('syncInterval');
-      expect(config).toHaveProperty('defaultDomain');
       expect(config).toHaveProperty('logLevel');
       expect(config).toHaveProperty('reverseProxyIps');
       expect(Array.isArray(config.reverseProxyIps)).toBe(true);

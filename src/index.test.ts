@@ -44,8 +44,8 @@ describe('buildDesiredRecords (logic extracted)', () => {
 
     for (const router of routers) {
       for (const host of router.hosts) {
-        // Skip if the host looks like an IP address (no domain)
-        const isIpAddress = /^\d+\.\d+\.\d+\.\d+$/.test(host);
+        // Skip if the host looks like an IP address (including placeholders like xxx.xxx.xxx.xxx)
+        const isIpAddress = /^(\d+|[xX]+)\.(\d+|[xX]+)\.(\d+|[xX]+)\.(\d+|[xX]+)$/.test(host);
         if (isIpAddress) {
           continue;
         }

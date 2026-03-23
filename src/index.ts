@@ -16,8 +16,8 @@ async function main() {
   const piholeService = new PiHoleService(piholeUrl, piholePassword);
 
   function isValidHost(host: string): boolean {
-    // Skip IP addresses
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return false;
+    // Skip IP addresses (including placeholders like xxx.xxx.xxx.xxx)
+    if (/^(\d+|[xX]+)\.(\d+|[xX]+)\.(\d+|[xX]+)\.(\d+|[xX]+)$/.test(host)) return false;
     // Skip regex patterns
     if (/^\^.*\$/.test(host) || /[?+*]/.test(host)) return false;
     // Skip internal/localhost domains
